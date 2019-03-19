@@ -329,6 +329,7 @@ $LNG['ttl_delete_avatar'] = '删除选定的文件图像';
 $LNG['privacy'] = '隐私';
 $LNG['public'] = '公开';
 $LNG['private'] = '私人';
+$LNG['push'] = '推送';
 $LNG['report'] = '报告';
 $LNG['delete_message'] = '删除信息';
 $LNG['remove_user'] = '删除用户';

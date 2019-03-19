@@ -6368,7 +6368,7 @@ class feed {
 		}
 	}
 	
-	function createPage($values, $type) {
+	function createPage($values, $type = null) {
 		if($values['token_id'] != $_SESSION['token_id']) {
 			return false;
 		}

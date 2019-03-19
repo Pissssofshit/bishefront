@@ -6,6 +6,7 @@
 // Language: English                                                    \\
 //======================================================================\\
 
+$LNG['push'] = 'push';
 $LNG['user_success'] = 'User succesfully created';
 $LNG['user_exists'] = 'This username already exists';
 $LNG['email_exists'] = 'This email is already in use';

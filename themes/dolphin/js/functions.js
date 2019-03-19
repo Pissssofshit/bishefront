@@ -1358,6 +1358,7 @@ function postPrivacy(type) {
 	} else {
 		$('#privacy-btn').addClass('privacy-icons private-icon');
 	}
+
 }
 function sidebarShow(id) {
 	$('#show-more-btn-'+id).remove();

@@ -1,3 +1,35 @@
+<script type="text/javascript" src="https://webapi.amap.com/maps?v=1.4.13&key=cdba47e109636c5c0526fc46d5ffe69b"></script>
+<script type="text/javascript">
+    AMap.plugin('AMap.Geolocation', function() {
+        var geolocation = new AMap.Geolocation({
+            enableHighAccuracy: true,//是否使用高精度定位，默认:true
+            timeout: 10000,          //超过10秒后停止定位，默认：5s
+            buttonPosition:'RB',    //定位按钮的停靠位置
+            buttonOffset: new AMap.Pixel(10, 20),//定位按钮与设置的停靠位置的偏移量，默认：Pixel(10, 20)
+            zoomToAccuracy: true,   //定位成功后是否自动调整地图视野到定位点
+
+        });
+        // map.addControl(geolocation);
+        geolocation.getCurrentPosition(function(status,result){
+            if(status=='complete'){
+          		onComplete(result)
+            }else{
+                onError(result)
+            }
+        });
+    });
+    //解析定位结果
+    function onComplete(data) {
+        $("#message-lat").val(data.position.lat);
+        $("#message-long").val(data.position.lng);
+        return data.position;
+    }
+    //解析定位错误信息
+    function onError(data) {
+        alert('定位失败。失败原因排查信息:'+data.message);
+    }
+</script>
+
 <div class="message-container">
 	<form id="imageForm" name="form" action="{$url}/requests/post_message.php" method="POST" enctype="multipart/form-data">
 	{$token_input}
@@ -13,11 +45,16 @@
 				<textarea id="post9999999999" class="message-form" placeholder="{$lng->message_form}" name="message"></textarea>
 			</div>
 			<div id="plugins-forms" style="display: none;"></div>
-			
+
+
+			<input type="hidden" name="message-lat" id="message-lat" >
+			<input type="hidden" name="message-long" id="message-long" >
+
 			<input type="hidden" name="privacy" id="message-privacy" value="{$private_message}">
 			<input type="hidden" name="group" id="message-group" value="{$group}">
 			<input type="hidden" name="page" id="message-page" value="{$page}">
-			
+			<input type="hidden" name="push" id="message-push" value="{$push}">
+
 			<div class="selected-files"><span id="queued-files">0</span> {$lng->files_selected}</div>
 			<div class="message-form-input"><input type="text" name="value" id="form-value"></div>
 			<div id="values">
@@ -39,6 +76,7 @@
 				<div class="message-menu-row" onclick="postPrivacy(1)">{$lng->public}</div>
 				<div class="message-menu-row" onclick="postPrivacy(2)">{$lng->friends}</div>
 				<div class="message-menu-row" onclick="postPrivacy(0)">{$lng->private}</div>
+				<div class="message-menu-row" onclick="postPrivacy(3)">{$lng->push}</div>
 			</div>
 		</div>
 		<iframe id="my_iframe" name="my_iframe" src="" style="display: none"></iframe>
