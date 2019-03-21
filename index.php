@@ -30,7 +30,8 @@ if($resultSettings) {
 } else {
 	echo "Error: ".$db->error;
 }
-
+$loggedIn = new loggedIn();
+$loggedIn->db = $db;
 require_once("./sources/{$page_name}.php");
 
 // Store the theme path and theme name into the CONF and TMPL
