@@ -40,11 +40,11 @@ if(isset($_SESSION['username']) && isset($_SESSION['password']) || isset($_COOKI
 		$feed->online_time = $settings['conline'];
 		$feed->c_start = 0;
 		if($_POST['for'] == 1) {
-			echo $feed->checkNewNotifications($settings['nperwidget'], $_POST['type'], $_POST['for'], $verify['notificationl'], $verify['notificationc'], $verify['notifications'], $verify['notificationf'], $verify['notificationd'], null, $verify['notificationg'], $verify['notificationp'], $verify['notificationx']);
+			echo $feed->checkNewNotifications($settings['nperwidget'], $_POST['type'], $_POST['for'], $verify['notificationl'], $verify['notificationc'], $verify['notifications'], $verify['notificationf'], $verify['notificationd'], null, $verify['notificationg'], $verify['notificationp'], $verify['notificationx'], $verify['push']);
 		} elseif($_POST['for'] == 2) {
-			echo $feed->checkNewNotifications($settings['nperwidget'], $_POST['type'], $_POST['for'], $verify['notificationl'], $verify['notificationc'], $verify['notifications'], $verify['notificationf'], $verify['notificationd'], null, $verify['notificationg'], $verify['notificationp'], $verify['notificationx']);
+			echo $feed->checkNewNotifications($settings['nperwidget'], $_POST['type'], $_POST['for'], $verify['notificationl'], $verify['notificationc'], $verify['notifications'], $verify['notificationf'], $verify['notificationd'], null, $verify['notificationg'], $verify['notificationp'], $verify['notificationx'], $verify['push']);
 		} else {
-			echo $feed->checkNewNotifications($settings['nperwidget'], $_POST['type'], $_POST['for'], $verify['notificationl'], $verify['notificationc'], $verify['notifications'], $verify['notificationf'], $verify['notificationd'], null, $verify['notificationg'], $verify['notificationp'], $verify['notificationx']);
+			echo $feed->checkNewNotifications($settings['nperwidget'], $_POST['type'], $_POST['for'], $verify['notificationl'], $verify['notificationc'], $verify['notifications'], $verify['notificationf'], $verify['notificationd'], null, $verify['notificationg'], $verify['notificationp'], $verify['notificationx'], $verify['push']);
 		}
 	}
 }

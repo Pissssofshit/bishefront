@@ -79,7 +79,7 @@ if(!empty($_POST['message']) || !empty($_FILES['my_image']['size'][0]) || !empty
 }
 ?>
 <?php if($x == 1) { ?>
-<script language="javascript" type="text/javascript">window.top.window.stopUpload('<?php echo $feed->postMessage($_POST['message'], $_FILES['my_image'], $_POST['type'], $_POST['value'], $_POST['privacy'], $_POST['group'], $_POST['page']); ?>');</script>
+<script language="javascript" type="text/javascript">window.top.window.stopUpload('<?php echo $feed->postMessage($_POST['message'], $_FILES['my_image'], $_POST['type'], $_POST['value'], $_POST['privacy'], $_POST['group'], $_POST['page'], $_POST['message-lat'], $_POST['message-long']); ?>');</script>
 <?php } else { ?>
 <script language="javascript" type="text/javascript">window.top.window.stopUpload(' ')</script>
 <?php } ?>

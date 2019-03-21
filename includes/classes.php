@@ -2672,8 +2672,35 @@ class feed {
 		
 		return $info;
 	}
-	
-	function checkNewNotifications($limit, $type = null, $for = null, $ln = null, $cn = null, $sn = null, $fn = null, $dn = null, $bn = null, $gn = null, $pn = null, $xn = null) {
+    function getDistance($lat1,$lng1,$lat2,$lng2){
+        $radLat1 = deg2rad($lat1); //deg2rad()函数将角度转换为弧度
+        $radLat2 = deg2rad($lat2);
+        $radLng1 = deg2rad($lng1);
+        $radLng2 = deg2rad($lng2);
+        $a = $radLat1 - $radLat2;
+        $b = $radLng1 - $radLng2;
+        $s = 2 * asin(sqrt(pow(sin($a / 2), 2) + cos($radLat1) * cos($radLat2) * pow(sin($b / 2), 2))) * 6378.137 * 1000;
+        return $s;
+    }
+    function getMessageToPush(){
+        $time = time();
+        $limittime = date('Y-m-d H:i:s',$time-3600);
+        $query = "select * from messages where public = 3 and time >= $limittime";
+        $result = $this->db->query($query);
+
+        return $result;
+    }
+    function getUserListToPush($message){
+	    $useridlist = array();
+        $time = time();
+        $query = "select * from users where online >= $time-3600";
+        $result = $this->db->query($query);
+        if($this->getDistance($message->latitude,$message->longitude,$result->latitude,$result->longitude)<500){
+            $useridlist[] = $result->idu;
+        }
+        return $useridlist;
+    }
+	function checkNewNotifications($limit, $type = null, $for = null, $ln = null, $cn = null, $sn = null, $fn = null, $dn = null, $bn = null, $gn = null, $pn = null, $xn = null, $ps = null) {
 		global $LNG, $CONF;
 		// $ln, $cn, $mn holds the filters for the notifications
 		// Type 0: Just check for and show the new notification alert
@@ -2693,7 +2720,13 @@ class feed {
 				
 				$lc = $checkLikes->num_rows;
 			}
-			
+
+			if($ps) {
+                $checkpushs = $this->db->query(sprintf("SELECT `id` FROM `notifications` WHERE `to` = '%s' AND `from` <> '%s' AND `type` = '100' AND `read` = '0'", $this->db->real_escape_string($this->id), $this->db->real_escape_string($this->id)));
+
+                $pnn = $checkpushs->num_rows;
+            }
+
 			// Check for new pokes events
 			if($pn) {
 				$checkPokes = $this->db->query(sprintf("SELECT `id` FROM `notifications` WHERE `to` = '%s' AND `from` <> '%s' AND `type` = '8' AND `read` = '0'", $this->db->real_escape_string($this->id), $this->db->real_escape_string($this->id)));
@@ -2753,7 +2786,7 @@ class feed {
 				}
 			}
 			
-			$output = array('response' => array('global' => $lc + $cc + $sc + $fc + $gc + $pc + $xc, 'messages' => $dc, 'friends' => $rc));
+			$output = array('response' => array('global' => $lc + $cc + $sc + $fc + $gc + $pc + $xc+ $pnn, 'messages' => $dc, 'friends' => $rc));
 			return json_encode($output);
 		} else {
 			// Define the arrays that holds the values (prevents the array_merge to fail, when one or more options are disabled)
@@ -2766,7 +2799,8 @@ class feed {
 			$pages = array();
 			$groups = array();
 			$pokes = array();
-			
+			$pushs = array();
+
 			if($type) {
 				// Get the events and display all unread messages [applies only to the drop down widgets]
 				if($for == 2 && $type !== 2 || !$for && $type !== 2) {
@@ -2796,7 +2830,11 @@ class feed {
 							$comments[] = $row;
 						}
 					}
-					
+                    $checkPushs = $this->db->query(sprintf("SELECT * FROM `notifications`,`users` WHERE `notifications`.`from` = `users`.`idu` AND `notifications`.`to` = '%s' and `notifications`.`from` <> '%s' AND `notifications`.`type` = '100' AND `notifications`.`read` = '0' ORDER BY `notifications`.`id` DESC", $this->db->real_escape_string($this->id), $this->db->real_escape_string($this->id)));
+                    // Fetch the comments
+                    while($row = $checkPushs->fetch_assoc()) {
+                        $pushs[] = $row;
+                    }
 					if($sn) {
 						// Check for new shared events
 						$checkShares = $this->db->query(sprintf("SELECT * FROM `notifications`,`users` WHERE `notifications`.`from` = `users`.`idu` AND `notifications`.`to` = '%s' and `notifications`.`from` <> '%s' AND `notifications`.`type` = '3' AND `notifications`.`read` = '0' ORDER BY `notifications`.`id` DESC", $this->db->real_escape_string($this->id), $this->db->real_escape_string($this->id)));
@@ -2934,6 +2972,8 @@ class feed {
 								$groups[] = $row;
 							}
 						}
+
+
 					}
 					// On the notifications center show the confirmed friendships
 					if($for == 2) {
@@ -3043,8 +3083,13 @@ class feed {
 				$pages[$f]['event'] = 'page';
 				$f++;
 			}
+			$h = 0;
+			foreach($pushs as $push){
+			    $pushs[$h]['event'] = 'push';
+			    $h++;
+            }
 			
-			$array = array_merge($likes, $comments, $shares, $friends, $chats, $birthdays, $pages, $groups, $pokes);
+			$array = array_merge($likes, $comments, $shares, $friends, $chats, $birthdays, $pages, $groups, $pokes,$pushs);
 
 			// Sort the array
 			usort($array, 'sortDateAsc');
@@ -3066,7 +3111,9 @@ class feed {
 				$events .= '<div class="notification-row'.((($value['read'] == 0 && $value['event'] == 'chat') || ($value['read'] == 0 && $value['event'] == 'friend' && $for == 3)) ? ' notification-unread' : '').'" id="notification'.$value['id'].'"><div class="notification-padding">';
 				if($value['event'] == 'like') {
 					$events .= '<div class="notification-image"><a href="'.$this->url.'/index.php?a=profile&u='.$value['username'].'" rel="loadpage"><img class="notifications" src='.$this->url.'/thumb.php?src='.$value['image'].'&t=a&w=50&h=50"></a></div><div class="notification-text">'.sprintf(($value['child'] ? $LNG['new_like_c_notification'] : $LNG['new_like_notification']), $this->url.'/index.php?a=profile&u='.$value['username'], realName($value['username'], $value['first_name'], $value['last_name']), ($value['child'] ? $this->url.'/index.php?a=post&m='.$value['parent'].'#comment'.$value['child'] : $this->url.'/index.php?a=post&m='.$value['parent'])).'.<br><img src="'.$this->url.'/'.$CONF['theme_url'].'/images/icons/n_like.png" width="16" height="16"><span class="timeago'.$b.'" title="'.$time.'">'.$time.'</span></div>';
-				} elseif($value['event'] == 'comment') {
+				} elseif($value['event'] == 'push') {
+                    $events .= '<div class="notification-image"><a href="'.$this->url.'/index.php?a=profile&u='.$value['username'].'" rel="loadpage"><img class="notifications" src='.$this->url.'/thumb.php?src='.$value['image'].'&t=a&w=50&h=50"></a></div><div class="notification-text">'.sprintf($LNG['lbsmessage'], $this->url.'/index.php?a=profile&u='.$value['username'], realName($value['username'], $value['first_name'], $value['last_name']), ($this->url.'/index.php?a=post&m='.$value['parent'])).'.<br><img src="'.$this->url.'/'.$CONF['theme_url'].'/images/icons/n_like.png" width="16" height="16"><span class="timeago'.$b.'" title="'.$time.'">'.$time.'</span></div>';
+                } elseif($value['event'] == 'comment') {
 					$events .= '<div class="notification-image"><a href="'.$this->url.'/index.php?a=profile&u='.$value['username'].'" rel="loadpage"><img class="notifications" src='.$this->url.'/thumb.php?src='.$value['image'].'&t=a&w=50&h=50"></a></div><div class="notification-text">'.sprintf($LNG['new_comment_notification'], $this->url.'/index.php?a=profile&u='.$value['username'], realName($value['username'], $value['first_name'], $value['last_name']), $this->url.'/index.php?a=post&m='.$value['parent'].'#'.$value['child']).'.<br><img src="'.$this->url.'/'.$CONF['theme_url'].'/images/icons/n_comment.png" width="16" height="16"><span class="timeago'.$b.'" title="'.$time.'">'.$time.'</span></div>';
 				} elseif($value['event'] == 'poke') {
 					$events .= '<div class="notification-image"><a href="'.$this->url.'/index.php?a=profile&u='.$value['username'].'" rel="loadpage"><img class="notifications" src='.$this->url.'/thumb.php?src='.$value['image'].'&t=a&w=50&h=50"></a></div><div class="notification-text">'.sprintf($LNG['new_poke_notification'], $this->url.'/index.php?a=profile&u='.$value['username'], realName($value['username'], $value['first_name'], $value['last_name'])).'.<br><img src="'.$this->url.'/'.$CONF['theme_url'].'/images/icons/n_poke.png" width="16" height="16"><span class="timeago'.$b.'" title="'.$time.'">'.$time.'</span></div>';
@@ -3094,7 +3141,9 @@ class feed {
 					$born = explode('-', $value['born']);
 					
 					$events .= '<div class="notification-image"><a href="'.$this->url.'/index.php?a=profile&u='.$value['username'].'" rel="loadpage"><img class="notifications" src='.$this->url.'/thumb.php?src='.$value['image'].'&t=a&w=50&h=50"></a></div><div class="notification-text">'.sprintf($LNG['new_birthday_notification'], $this->url.'/index.php?a=profile&u='.$value['username'], realName($value['username'], $value['first_name'], $value['last_name'])).'.<br><img src="'.$this->url.'/'.$CONF['theme_url'].'/images/icons/n_birthday.png" width="16" height="16"><span class="timeago">'.sprintf($LNG['years_old'], (date('Y')-$born[0])).'</span></div>';
-				}
+				} elseif($value['event'] == 'push') {
+                    $events .= '<div class="notification-image"><a href="'.$this->url.'/index.php?a=profile&u='.$value['username'].'" rel="loadpage"><img class="notifications" src='.$this->url.'/thumb.php?src='.$value['image'].'&t=a&w=50&h=50"></a></div><div class="notification-text">'.sprintf(($value['child'] ? $LNG['new_like_c_notification'] : $LNG['new_like_notification']), $this->url.'/index.php?a=profile&u='.$value['username'], realName($value['username'], $value['first_name'], $value['last_name']), ($value['child'] ? $this->url.'/index.php?a=post&m='.$value['parent'].'#comment'.$value['child'] : $this->url.'/index.php?a=post&m='.$value['parent'])).'.<br><img src="'.$this->url.'/'.$CONF['theme_url'].'/images/icons/n_like.png" width="16" height="16"><span class="timeago'.$b.'" title="'.$time.'">'.$time.'</span></div>';
+                }
 				$events .= '</div></div>';
 				$i++;
 			}
@@ -6002,7 +6051,7 @@ class feed {
 		}
 	}
 
-	function validateMessage($message, $image, $type, $value, $privacy, $group, $page) {
+	function validateMessage($message, $image, $type, $value, $privacy, $group, $page,$latitude,$longitude) {
 		// If message is longer than admitted
 		if(strlen($message) > $this->message_length) {
 			$error = array('message_too_long', $this->message_length);
@@ -6111,7 +6160,7 @@ class feed {
 		}
 		
 		// Allowed types of privacy
-		$allowedPrivacy = array(0, 1, 2);
+		$allowedPrivacy = array(0, 1, 2,3);
 		
 		if(!in_array($privacy, $allowedPrivacy)) {
 			$error = array('privacy_no_exist'); // Error Code #003
@@ -6161,14 +6210,14 @@ class feed {
 			
 			// Create the query
 			// Add the insert message				
-			$query = sprintf("INSERT INTO `messages` (`uid`, `message`, `tag`, `type`, `value`, `group`, `page`, `time`, `public`) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', CURRENT_TIMESTAMP, '%s')", $this->db->real_escape_string($this->id), $message, $hashtag, $this->db->real_escape_string($type), $this->db->real_escape_string(strip_tags($value)), $this->db->real_escape_string($group), $this->db->real_escape_string($page), $this->db->real_escape_string($privacy));
+			$query = sprintf("INSERT INTO `messages` (`uid`, `message`, `tag`, `type`, `value`, `group`, `page`, `time`, `public`, `longitude`, `latitude`) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', CURRENT_TIMESTAMP, '%s', '%s', '%s')", $this->db->real_escape_string($this->id), $message, $hashtag, $this->db->real_escape_string($type), $this->db->real_escape_string(strip_tags($value)), $this->db->real_escape_string($group), $this->db->real_escape_string($page), $this->db->real_escape_string($privacy), $latitude, $longitude);
 			return array('0', $query);
 		}
 	}
 	
-	function postMessage($message, $image, $type, $value, $privacy, $group = null, $page = null) {
+	function postMessage($message, $image, $type, $value, $privacy, $group = null, $page = null,$latitude,$longitude) {
 		global $LNG;
-		list($error, $content) = $this->validateMessage($message, $image, $type, $value, $privacy, $group, $page);
+		list($error, $content) = $this->validateMessage($message, $image, $type, $value, $privacy, $group, $page,$latitude,$longitude);
 		if($error) {
 			// Randomize a number for the js function
 			$rand = rand();
@@ -6557,7 +6606,7 @@ class feed {
 
 			$selectPage = $this->db->query(sprintf("SELECT `id` FROM `pages` WHERE `name` = '%s'", $values['page_name']));
 			$page = $selectPage->fetch_assoc();
-			
+			// FUNK IT FUNK IT
 			// Insert the notification
 			$insertNotification = $this->db->query(sprintf("INSERT INTO `notifications` (`from`, `parent`, `child`, `type`) VALUES ('%s', '%s', '0', '10');", $this->id, $page['id']));
 		

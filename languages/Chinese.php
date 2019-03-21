@@ -245,6 +245,7 @@ $LNG['privacy_no_exist'] = '选定的隐私不存在，请刷新页面再试一�
 $LNG['event_not_exist'] = '选定的事件不存在，请刷新页面再试一次.';
 $LNG['change_privacy'] = '谁应该看到的信息';
 
+$LNG['lbsmessage'] = '<a href="%s" rel="loadpage">%s</a> 发起了 <a href="%s" rel="loadpage">占位符</a>';
 $LNG['message_too_long'] = '对不起，每个消息所允许的最大字符是<strong>%s</strong>.';
 $LNG['files_selected'] = '图像(s) 选择';
 $LNG['too_many_images'] = '允许上传的每个消息的图像的最大数量是<strong>%s</strong>, 你试图上传 <strong>%s</strong>图像.';

@@ -73,7 +73,7 @@ $LNG['user_not_exist'] = 'The selected user does not exist.';
 $LNG['theme_changed'] = 'Theme changed';
 $LNG['notif_saved'] = 'Notifications changed';
 $LNG['notif_success_saved'] = 'Notifications has been successfully updated.';
-
+$LNG['lbsmessage'] = 'someone has start a topic,join it！';
 // MAIL CONTENT
 $LNG['welcome_mail'] = 'Welcome to %s';
 $LNG['user_created'] = 'Thank you for joining <strong>%s</strong>.<br /><br />Your username: <strong>%s</strong><br />Your Password: <strong>%s</strong><br /><br />You can log-in at: <a href="%s" target="_blank">%s</a>';
