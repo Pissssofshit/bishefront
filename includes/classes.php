@@ -1456,6 +1456,23 @@ class feed {
 	public $email_new_friend;	// The admin settings for allowing e-mails on new friendship to be sent
 	public $smiles;				// The admin settings for displaying smiles in messages
 
+
+    function filterMessageList($messagelist,$value){
+        $username = $_SESSION['username'];
+        if($value=="map"){
+            $query = "select * from users where username = '".$username."' limit 1";
+            $result = $this->db->query($query);
+            $row = $result->fetch_assoc();
+            foreach($messagelist as $key=>$message){
+                if($this->getDistance($row["lastloginlat"],$row["lastloginlong"],$message["latitude"],$message["longitude"])>500){
+                    unset($messagelist[$key]);
+                }
+            }
+            $messagelist = array_values($messagelist);
+
+        }
+        return $messagelist;
+    }
 	function getMessages($query, $type, $typeVal) {
 		// QUERY: Holds the query string
 		// TYPE: [loadFeed, loadProfile, loadHashtags]
@@ -1470,7 +1487,7 @@ class feed {
 		while($row = $result->fetch_assoc()) {
 			$rows[] = $row;
 		}
-		
+		$rows = $this->filterMessageList($rows,$typeVal);
 		// If the Feed is empty, display a welcome message
 		if(empty($rows) && $type == 'loadHashtags') {
 			return $this->showError('no_results');
@@ -1529,10 +1546,12 @@ class feed {
 				$public = '<div class="privacy-icons public-icon" title="'.$LNG['public'].'"></div>';
 			} elseif($row['public'] == 2) {
 				$public = '<div class="privacy-icons friends-icon" title="'.$LNG['friends'].'"></div>';
-			} else {
+			} elseif($row['public'] == 0) {
 				$public = '<div class="privacy-icons private-icon" title="'.$LNG['private'].'"></div>';
 				$style = ' style="display: none"';
-			}
+			} elseif($row['public'] == 3) {
+                $public = '<div class="privacy-icons friends-icon" title="'.$LNG['push'].'"></div>';
+            }
 			if(empty($this->username)) {
 				$menu = '';
 				$style = ' style="display: none"';
@@ -1729,7 +1748,7 @@ class feed {
 		// Get the user feed
 		$query = sprintf("SELECT * FROM messages, users WHERE (messages.uid IN (%s) %s AND users.suspended = 0 AND messages.group = 0 AND messages.page = 0 AND messages.public <> 0 AND messages.uid = users.idu %s %s) %s  ORDER BY messages.id DESC LIMIT %s", $this->friendsList, $date.$type, $start, $from, $pages, ($this->per_page + 1));
 		
-		return $this->getMessages($query, 'loadFeed', '\''.saniscape($value).'\'');
+		return $this->getMessages($query, 'loadFeed', saniscape($value));
 		$x = '<div class="message-container"><div class="message-content"><div class="message-inner">kljjkl</div></div></div>';
 	}
 	
@@ -3030,7 +3049,7 @@ class feed {
 						if($for == 3) {
 							$likes = array(); $comments = array(); $shares = array(); $chats = array(); $pages = array(); $groups = array(); $pokes = array();
 						}
-						if(empty($likes) && empty($comments) && empty($shares) && empty($friends) && empty($chats) && empty($pages) && empty($groups) && empty($pokes)) {
+						if(empty($likes) && empty($comments) && empty($shares) && empty($friends) && empty($chats) && empty($pages) && empty($groups) && empty($pokes) && empty($pushs)) {
 							return '<div class="notification-row"><div class="notification-padding">'.$LNG['no_notifications'].'</a></div></div>';
 						}
 					}
@@ -3926,7 +3945,7 @@ class feed {
 		}
 		
 		// If the POST is public
-		if($row['public'] == 1 && !$this->getBlocked($row['uid'], 2)) {
+		if(($row['public'] == 1 || $row['public'] == 3) && !$this->getBlocked($row['uid'], 2)) {
 			// Add the insert message
 			$stmt = $this->db->prepare("INSERT INTO `comments` (`uid`, `mid`, `message`) VALUES ('{$this->db->real_escape_string($this->id)}', '{$this->db->real_escape_string($id)}', '{$this->db->real_escape_string(htmlspecialchars($comment))}')");
 
@@ -4638,9 +4657,14 @@ class feed {
 		}
 	}
 	
-	function updateStatus($offline = null) {
+	function updateStatus($offline = null,$longitude = null, $latitude = null) {
 		if(!$offline) {
-			$this->db->query(sprintf("UPDATE `users` SET `online` = '%s' WHERE `idu` = '%s'", time(), $this->db->real_escape_string($this->id)));
+		    if($longitude && $latitude){
+		        $this->db->query(sprintf("UPDATE `users` SET `online` = '%s',`lastloginlat` = '%s', `lastloginlong` = '%s' WHERE `idu` = '%s'", time(), $latitude, $longitude,$this->db->real_escape_string($this->id)));
+            }else{
+                $this->db->query(sprintf("UPDATE `users` SET `online` = '%s' WHERE `idu` = '%s'", time(), $this->db->real_escape_string($this->id)));
+            }
+
 		}
 	}
 	
@@ -6210,7 +6234,7 @@ class feed {
 			
 			// Create the query
 			// Add the insert message				
-			$query = sprintf("INSERT INTO `messages` (`uid`, `message`, `tag`, `type`, `value`, `group`, `page`, `time`, `public`, `longitude`, `latitude`) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', CURRENT_TIMESTAMP, '%s', '%s', '%s')", $this->db->real_escape_string($this->id), $message, $hashtag, $this->db->real_escape_string($type), $this->db->real_escape_string(strip_tags($value)), $this->db->real_escape_string($group), $this->db->real_escape_string($page), $this->db->real_escape_string($privacy), $latitude, $longitude);
+			$query = sprintf("INSERT INTO `messages` (`uid`, `message`, `tag`, `type`, `value`, `group`, `page`, `time`, `public`, `latitude`, `longitude`) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', CURRENT_TIMESTAMP, '%s', '%s', '%s')", $this->db->real_escape_string($this->id), $message, $hashtag, $this->db->real_escape_string($type), $this->db->real_escape_string(strip_tags($value)), $this->db->real_escape_string($group), $this->db->real_escape_string($page), $this->db->real_escape_string($privacy), $latitude, $longitude);
 			return array('0', $query);
 		}
 	}

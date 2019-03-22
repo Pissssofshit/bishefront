@@ -1,7 +1,8 @@
-document.write("<script type=\"text/javascript\" src=\"https://webapi.amap.com/maps?v=1.4.13&key=cdba47e109636c5c0526fc46d5ffe69b\"></script>");
+document.write("<script type=\"text/javascript\" src=\"https://webapi.amap.com/maps?v=1.4.13&key=7375a6e7139e377306ae4dedf9f42b8f\"></script>");
 var locationsss = {};
 locationsss["lng"]=null;
 locationsss["lat"]=null;
+var addressName = "地球";
 function getLocation() {
     AMap.plugin('AMap.Geolocation', function() {
         var geolocation = new AMap.Geolocation({
@@ -423,6 +424,31 @@ function edit_message(id, type) {
 		
 		$('#edited_message'+id).focus();
 	}
+}
+// 不知道为什么会报错
+
+function getAddressName(){
+    AMap.plugin('AMap.Geocoder', function() {
+        var geocoder = new AMap.Geocoder({
+            // city 指定进行编码查询的城市，支持传入城市名、adcode 和 citycode
+            city: '010'
+        })
+
+        var lnglat = [locationsss.lng,locationsss.lat];
+		console.log(lnglat);
+
+        geocoder.getAddress(lnglat, function(status, result) {
+        	console.log(1);
+        	console.log(status);
+        	console.log(result);
+            if (status === 'complete' && result.info === 'OK') {
+                // result为对应的地理位置详细信息
+				addressName = result;
+				console.log(addressName);
+                $('#form-value').val(addressName);
+            }
+        })
+    })
 }
 function report_the(id, type) {
 	// id = unique id of the message/comment

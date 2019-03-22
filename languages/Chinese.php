@@ -663,8 +663,8 @@ $LNG['admin_reports_delete'] = '删除报告和报告的内容';
 $LNG['admin_reports_view'] = '查看已报告的内容';
 
 // LIKES
-$LNG['like'] = '像';
-$LNG['dislike'] = '不像';
+$LNG['like'] = '喜欢';
+$LNG['dislike'] = '不喜欢';
 $LNG['liked'] = '喜欢';
 $LNG['liked_this'] = '喜欢这个';
 $LNG['view_all_likes'] = '查看所有喜欢';

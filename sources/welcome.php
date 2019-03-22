@@ -94,7 +94,9 @@ function PageMain() {
 	}
 	
 	if(isset($_SESSION['username']) && isset($_SESSION['password']) || isset($_COOKIE['username']) && isset($_COOKIE['password'])) {
-		
+		$loggedIn->username = $_SESSION['username'];
+		$loggedIn->password = $_SESSION['password'];
+
 		$verify = $loggedIn->verify();
 
 		if($verify['username']) {

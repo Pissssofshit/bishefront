@@ -41,7 +41,7 @@ if(isset($_SESSION['username']) && isset($_SESSION['password']) || isset($_COOKI
 		$feed->smiles = $settings['smiles'];
 		$feed->time = $settings['time'];
 		$feed->online_time = $settings['conline'];
-		$feed->updateStatus($verify['offline']);
+		$feed->updateStatus($verify['offline'],$_POST["longititude"],$_POST["latitude"]);
 		
 		// Type 1: Check for new messages.
 		if($_POST['type'] == 1) {
