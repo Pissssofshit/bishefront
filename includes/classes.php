@@ -1481,7 +1481,7 @@ class feed {
 
 		// Run the query
 		$result = $this->db->query($query);
-		
+
 		// Set the result into an array
 		$rows = array();
 		while($row = $result->fetch_assoc()) {
@@ -1605,7 +1605,7 @@ class feed {
 				$dataType = 0;
 			}
 			
-			if($row['type'] == 'shared') {
+			if($row['type'] == 'shared' ) {
 				$getOriginal = $this->db->query(sprintf("SELECT * FROM `messages`, `users` WHERE `messages`.`id` = '%s' AND `messages`.`uid` = `users`.`idu`", $row['value']));
 				$shared = $getOriginal->fetch_assoc();
 				
@@ -1696,7 +1696,7 @@ class feed {
 		if($loadmore) {
 			$messages .= '
 						<div class="message-container" id="more_messages">
-							<div class="load_more"><a onclick="'.$type.'('.$start.', '.$typeVal.''.$profile.')" id="load-more">'.$LNG['view_more_messages'].'</a></div>
+							<div class="load_more"><a onclick="'.$type.'('.$start.', '.'\''.$typeVal.'\''.''.$profile.')" id="load-more">'.$LNG['view_more_messages'].'</a></div>
 						</div>';
 		}
 		return array($messages, 0);
@@ -1751,7 +1751,8 @@ class feed {
 		return $this->getMessages($query, 'loadFeed', saniscape($value));
 		$x = '<div class="message-container"><div class="message-content"><div class="message-inner">kljjkl</div></div></div>';
 	}
-	
+
+
 	function getProfile($start, $value, $from = null) {
 		$profile = $this->profile_data;
 		$this->profile_id = $profile['idu'];
@@ -3632,8 +3633,10 @@ class feed {
 		
 			// If it's a map
 			case "map":
-				return '<div class="message-type-map event-map"><img src="https://maps.googleapis.com/maps/api/staticmap?center='.$value.'&zoom=13&size=700x150&maptype=roadmap&markers=color:red%7C'.$value.'&sensor=false&scale=2&visual_refresh=true"></div>
-				<div class="message-divider"></div>';
+//				return '<div class="message-type-map event-map"><img src="https://maps.googleapis.com/maps/api/staticmap?center='.$value.'&zoom=13&size=700x150&maptype=roadmap&markers=color:red%7C'.$value.'&sensor=false&scale=2&visual_refresh=true"></div>
+
+                return '<div class="message-type-map event-map"><div>这里加个位置图标</div>'.$value.'</div>'.
+				'<div class="message-divider"></div>';
 				break;
 			
 			// If it's a ate action
